@@ -1,13 +1,21 @@
-package com.example.prog3210_a2;
+package com.example.prog3210_a2.activities;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.prog3210_a2.models.Movie;
+import com.example.prog3210_a2.models.MovieDetail;
+import com.example.prog3210_a2.adapters.MovieSearchAdapter;
+import com.example.prog3210_a2.MoviesApplication;
+import com.example.prog3210_a2.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,7 +25,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Scanner;
 
-public class MainActivity extends Activity
+public class MovieSearchActivity extends Activity
 {
     private RecyclerView moviesView;
     private EditText searchFieldView;
@@ -37,9 +45,7 @@ public class MainActivity extends Activity
     private void showMovies(Movie[] movies) {
         moviesView.setVisibility(View.VISIBLE);
 
-        MoviesAdapter moviesAdapter =new MoviesAdapter(
-                this.getApplicationContext(), movies);
-
+        MovieSearchAdapter moviesAdapter = new MovieSearchAdapter(movies);
         moviesView.setAdapter(moviesAdapter);
     }
 
@@ -74,24 +80,53 @@ public class MainActivity extends Activity
         return new JSONObject(jsonStr);
     }
 
+    private MovieDetail createMovieDetail(JSONObject movieJson, String detail, String detailName) throws JSONException {
+        return new MovieDetail(detailName, movieJson.getString(detail));
+    }
+
     private Movie createMovie(JSONObject searchMovieJson) throws IOException, JSONException {
         // Request movie details
         String imdbID = searchMovieJson.getString("imdbID");
         String url = String.format("%s&i=%s", baseUrl, imdbID);
         JSONObject movieJson = requestJson(url);
 
-        return new Movie(
-                movieJson.getString("Title"),
-                movieJson.getString("Director"),
-                movieJson.getString("Year"),
-                movieJson.getString("imdbRating"));
+        Movie movie = new Movie();
+
+        movie.title = movieJson.getString("Title");
+        movie.year = movieJson.getString("Year");
+        movie.rating = movieJson.getString("Rated");
+        movie.director = movieJson.getString("Director");
+        movie.runtime = movieJson.getString("Runtime");
+        movie.description = movieJson.getString("Plot");
+        movie.posterUrl = movieJson.getString("Poster");
+
+        movie.details = new MovieDetail[] {
+                createMovieDetail(movieJson, "Released",
+                        getResources().getString(R.string.movie_prefix_date)),
+                createMovieDetail(movieJson, "Genre",
+                        getResources().getString(R.string.movie_prefix_genre)),
+                createMovieDetail(movieJson, "Director",
+                        getResources().getString(R.string.movie_prefix_director)),
+                createMovieDetail(movieJson, "Writer",
+                        getResources().getString(R.string.movie_prefix_writer)),
+                createMovieDetail(movieJson, "Actors",
+                        getResources().getString(R.string.movie_prefix_actors)),
+                createMovieDetail(movieJson, "Language",
+                        getResources().getString(R.string.movie_prefix_language)),
+                createMovieDetail(movieJson, "Country",
+                        getResources().getString(R.string.movie_prefix_country)),
+                createMovieDetail(movieJson, "Awards",
+                        getResources().getString(R.string.movie_prefix_awards)),
+        };
+
+        return movie;
     }
 
     private void searchMoviesAsync() {
         try {
             // Request JSON
             String searchTerm = String.valueOf(searchFieldView.getText());
-            String url = String.format("%s&s=%s", baseUrl, searchTerm);
+            String url = String.format("%s&type=movie&s=%s", baseUrl, searchTerm);
             JSONObject searchJson = requestJson(url);
 
             // Check for failure
@@ -103,13 +138,15 @@ public class MainActivity extends Activity
             // Create movies list
             JSONArray searchMoviesJson = searchJson.getJSONArray("Search");
 
-            int movieCount = Math.min(searchMoviesJson.length(), 5);
+            int movieCount = searchMoviesJson.length();
             Movie[] movies = new Movie[movieCount];
 
             for (int i = 0; i < movieCount; i++) {
                 JSONObject searchMovieJson = searchMoviesJson.getJSONObject(i);
                 movies[i] = createMovie(searchMovieJson);
             }
+
+            ((MoviesApplication)getApplication()).movies = movies;
 
             // Update view
             runOnUiThread(() -> {
@@ -129,6 +166,14 @@ public class MainActivity extends Activity
                 searchMoviesAsync();
             }
         }.start();
+    }
+
+    public void showDetails(View view) {
+        Intent intent = new Intent(this, MovieDetailsActivity.class);
+
+        intent.putExtra("movieIndex", (int)view.getTag());
+
+        startActivity(intent);
     }
 
     @Override

@@ -1,6 +1,5 @@
-package com.example.prog3210_a2;
+package com.example.prog3210_a2.adapters;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.widget.TextView;
 import android.view.View;
@@ -9,8 +8,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder> {
-    private final Context context;
+import com.example.prog3210_a2.R;
+import com.example.prog3210_a2.models.Movie;
+
+public class MovieSearchAdapter extends RecyclerView.Adapter<MovieSearchAdapter.ViewHolder> {
     private final Movie[] movies;
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -37,8 +38,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
         }
     }
 
-    public MoviesAdapter(Context context, Movie[] movies) {
-        this.context = context;
+    public MovieSearchAdapter(Movie[] movies) {
         this.movies = movies;
     }
 
@@ -46,7 +46,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view = LayoutInflater.from(viewGroup.getContext())
-                .inflate(R.layout.movie_cell, viewGroup, false);
+                .inflate(R.layout.movie_search_cell, viewGroup, false);
 
         return new ViewHolder(view);
     }
@@ -56,12 +56,13 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.ViewHolder
         Movie movie = movies[position];
 
         viewHolder.getTitleText().setText(
-                String.format("%s (%s)", movie.getTitle(), movie.getYear()));
-        viewHolder.getStudioText().setText(movie.getStudio());
+                String.format("%s (%s)", movie.title, movie.year));
 
-        String ratingPrefix = context.getResources().getString(R.string.movie_rating_prefix);
-        viewHolder.getRatingText().setText(
-                String.format("%s %s", ratingPrefix, movie.getRating()));
+        viewHolder.getStudioText().setText(movie.director);
+        viewHolder.getRatingText().setText(movie.rating);
+
+        // Tag view to movie index
+        viewHolder.itemView.setTag(position);
     }
 
     @Override

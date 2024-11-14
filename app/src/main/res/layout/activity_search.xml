@@ -11,13 +11,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/search_title"
-        android:textSize="24sp"/>
+        android:textSize="24sp" />
 
     <EditText
         android:id="@+id/searchField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:autofillHints=""
         android:ems="10"
         android:hint="@string/search_field"
@@ -28,7 +27,6 @@
         android:id="@+id/searchButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:onClick="searchMovies"
         android:text="@string/search_button" />
 
@@ -36,11 +34,12 @@
         android:id="@+id/statusText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/search_status" />
+        android:text="@string/search_status"
+        android:layout_margin="10dp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/movieList"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1" />
+        android:layout_height="wrap_content" />
+
 </LinearLayout>
