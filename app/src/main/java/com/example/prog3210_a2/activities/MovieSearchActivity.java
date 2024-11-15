@@ -4,10 +4,11 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -16,6 +17,7 @@ import com.example.prog3210_a2.models.MovieDetail;
 import com.example.prog3210_a2.adapters.MovieSearchAdapter;
 import com.example.prog3210_a2.MoviesApplication;
 import com.example.prog3210_a2.R;
+import com.example.prog3210_a2.models.MovieSearchViewModel;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,6 +25,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class MovieSearchActivity extends Activity
@@ -30,6 +33,8 @@ public class MovieSearchActivity extends Activity
     private RecyclerView moviesView;
     private EditText searchFieldView;
     private TextView statusTextView;
+
+    private MovieSearchViewModel viewModel;
 
     private final String baseUrl = "https://www.omdbapi.com/?apikey=10849f3b";
 
@@ -42,10 +47,10 @@ public class MovieSearchActivity extends Activity
         statusTextView.setVisibility(View.INVISIBLE);
     }
 
-    private void showMovies(Movie[] movies) {
+    private void showMovies() {
         moviesView.setVisibility(View.VISIBLE);
 
-        MovieSearchAdapter moviesAdapter = new MovieSearchAdapter(movies);
+        MovieSearchAdapter moviesAdapter = new MovieSearchAdapter(viewModel.movies);
         moviesView.setAdapter(moviesAdapter);
     }
 
@@ -100,6 +105,19 @@ public class MovieSearchActivity extends Activity
         movie.description = movieJson.getString("Plot");
         movie.posterUrl = movieJson.getString("Poster");
 
+        JSONArray ratingsJson = movieJson.getJSONArray("Ratings");
+        ArrayList<String> ratings = new ArrayList<String>();
+
+        for (int i = 0; i < ratingsJson.length(); i++) {
+            JSONObject ratingJson = ratingsJson.getJSONObject(i);
+            String ratingSource = ratingJson.getString("Source");
+
+            ratings.add(String.format("%s (%s)",
+                    ratingJson.getString("Value"), ratingSource));
+        }
+
+        String ratingsText = String.join(", ", ratings);
+
         movie.details = new MovieDetail[] {
                 createMovieDetail(movieJson, "Released",
                         getResources().getString(R.string.movie_prefix_date)),
@@ -117,6 +135,16 @@ public class MovieSearchActivity extends Activity
                         getResources().getString(R.string.movie_prefix_country)),
                 createMovieDetail(movieJson, "Awards",
                         getResources().getString(R.string.movie_prefix_awards)),
+                new MovieDetail(
+                        getResources().getString(R.string.movie_prefix_ratings), ratingsText),
+                createMovieDetail(movieJson, "DVD",
+                        getResources().getString(R.string.movie_prefix_dvd)),
+                createMovieDetail(movieJson, "BoxOffice",
+                        getResources().getString(R.string.movie_prefix_box_office)),
+                createMovieDetail(movieJson, "Production",
+                        getResources().getString(R.string.movie_prefix_production)),
+                createMovieDetail(movieJson, "Website",
+                        getResources().getString(R.string.movie_prefix_website)),
         };
 
         return movie;
@@ -150,8 +178,10 @@ public class MovieSearchActivity extends Activity
 
             // Update view
             runOnUiThread(() -> {
-                showMovies(movies);
-                hideStatusText();
+                showMovies();
+                showStatusText(String.format(
+                        getResources().getString(R.string.search_results), movies.length
+                ));
             });
         } catch (JSONException | IOException e) {
             showSearchError();
@@ -181,6 +211,9 @@ public class MovieSearchActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
 
+        viewModel = new ViewModelProvider(this)
+                .get(MovieSearchViewModel.class);
+
         moviesView = findViewById(R.id.movieList);
         moviesView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -188,5 +221,9 @@ public class MovieSearchActivity extends Activity
         statusTextView = findViewById(R.id.statusText);
 
         hideStatusText();
+
+        if (viewModel.movies != null) {
+            showMovies();
+        }
     }
 }

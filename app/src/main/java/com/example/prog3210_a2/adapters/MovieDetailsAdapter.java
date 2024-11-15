@@ -1,6 +1,5 @@
 package com.example.prog3210_a2.adapters;
 
-import android.text.Html;
 import android.view.LayoutInflater;
 import android.widget.TextView;
 import android.view.View;
@@ -11,26 +10,32 @@ import androidx.core.text.HtmlCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prog3210_a2.R;
+import com.example.prog3210_a2.models.MovieDetail;
 
 public class MovieDetailsAdapter extends RecyclerView.Adapter<MovieDetailsAdapter.ViewHolder> {
-    private final String[] list;
+    private final MovieDetail[] details;
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        private final TextView textView;
+        private final TextView nameTextView, valueTextView;
+
+        public TextView getValueTextView() {
+            return valueTextView;
+        }
+
+        public TextView getNameTextView() {
+            return nameTextView;
+        }
 
         public ViewHolder(View view) {
             super(view);
 
-            textView = view.findViewById(R.id.textView);
-        }
-
-        public TextView getTextView() {
-            return textView;
+            nameTextView = view.findViewById(R.id.nameText);
+            valueTextView = view.findViewById(R.id.valueText);
         }
     }
 
-    public MovieDetailsAdapter(String[] list) {
-        this.list = list;
+    public MovieDetailsAdapter(MovieDetail[] details) {
+        this.details = details;
     }
 
     @NonNull
@@ -44,12 +49,14 @@ public class MovieDetailsAdapter extends RecyclerView.Adapter<MovieDetailsAdapte
 
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, final int position) {
-        viewHolder.getTextView().setText(
-                HtmlCompat.fromHtml(list[position], HtmlCompat.FROM_HTML_MODE_COMPACT));
+        MovieDetail detail = details[position];
+
+        viewHolder.getNameTextView().setText(detail.name);
+        viewHolder.getValueTextView().setText(detail.value);
     }
 
     @Override
     public int getItemCount() {
-        return list.length;
+        return details.length;
     }
 }

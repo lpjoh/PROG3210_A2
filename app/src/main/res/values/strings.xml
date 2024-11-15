@@ -8,6 +8,7 @@
     <string name="search_loading">Searching…</string>
     <string name="search_error">Search error.</string>
     <string name="search_failure">Search failure:</string>
+    <string name="search_results">%d results found.</string>
 
     <string name="movie_name">Movie name</string>
     <string name="movie_year">2000</string>
@@ -25,6 +26,11 @@
     <string name="movie_prefix_language">Language:</string>
     <string name="movie_prefix_country">Country:</string>
     <string name="movie_prefix_awards">Awards:</string>
+    <string name="movie_prefix_ratings">Ratings:</string>
+    <string name="movie_prefix_dvd">DVD:</string>
+    <string name="movie_prefix_box_office">Box office:</string>
+    <string name="movie_prefix_production">Production:</string>
+    <string name="movie_prefix_website">Website:</string>
 
     <string name="details_title">Movie details</string>
     <string name="details_back">Back to search</string>

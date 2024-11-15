@@ -1,13 +1,12 @@
 package com.example.prog3210_a2.activities;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import com.example.prog3210_a2.adapters.MovieDetailsAdapter;
@@ -42,10 +41,10 @@ public class MovieDetailsActivity extends Activity
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
 
             InputStream is = connection.getInputStream();
-            Bitmap img = BitmapFactory.decodeStream(is);
+            Bitmap image = BitmapFactory.decodeStream(is);
 
             runOnUiThread(() -> {
-                posterView.setImageBitmap(img);
+                posterView.setImageBitmap(image);
             });
         }
         catch (IOException e) {
@@ -73,16 +72,9 @@ public class MovieDetailsActivity extends Activity
         showText(findViewById(R.id.runtimeText), movie.runtime);
         showText(findViewById(R.id.descriptionText), movie.description);
 
-        String[] detailTexts = new String[movie.details.length];
-
-        for (int i = 0; i < detailTexts.length; i++) {
-            MovieDetail detail = movie.details[i];
-            detailTexts[i] = String.format("<b>%s</b> %s", detail.name, detail.value);
-        }
-
         RecyclerView detailsView = findViewById(R.id.detailsList);
         detailsView.setLayoutManager(new LinearLayoutManager(this));
-        detailsView.setAdapter(new MovieDetailsAdapter(detailTexts));
+        detailsView.setAdapter(new MovieDetailsAdapter(movie.details));
 
         // Load poster
         posterView = findViewById(R.id.posterImage);
