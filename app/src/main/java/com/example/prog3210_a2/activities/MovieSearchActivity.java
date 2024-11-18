@@ -1,42 +1,39 @@
 package com.example.prog3210_a2.activities;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.prog3210_a2.models.Movie;
-import com.example.prog3210_a2.models.MovieDetail;
-import com.example.prog3210_a2.adapters.MovieSearchAdapter;
 import com.example.prog3210_a2.MoviesApplication;
+import com.example.prog3210_a2.models.Movie;
+import com.example.prog3210_a2.adapters.MovieSearchAdapter;
 import com.example.prog3210_a2.R;
-import com.example.prog3210_a2.models.MovieSearchViewModel;
+import com.example.prog3210_a2.models.MovieDetail;
+import com.example.prog3210_a2.viewmodels.MovieSearchViewModel;
+import androidx.appcompat.app.AppCompatActivity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Scanner;
 
-public class MovieSearchActivity extends Activity
+public class MovieSearchActivity extends AppCompatActivity
 {
+    private MovieSearchViewModel viewModel;
+
     private RecyclerView moviesView;
     private EditText searchFieldView;
     private TextView statusTextView;
-
-    private MovieSearchViewModel viewModel;
-
-    private final String baseUrl = "https://www.omdbapi.com/?apikey=10849f3b";
 
     private void showStatusText(String text) {
         statusTextView.setVisibility(View.VISIBLE);
@@ -47,54 +44,12 @@ public class MovieSearchActivity extends Activity
         statusTextView.setVisibility(View.INVISIBLE);
     }
 
-    private void showMovies() {
-        moviesView.setVisibility(View.VISIBLE);
-
-        MovieSearchAdapter moviesAdapter = new MovieSearchAdapter(viewModel.movies);
-        moviesView.setAdapter(moviesAdapter);
-    }
-
-    private void hideMovies() {
-        moviesView.setVisibility(View.INVISIBLE);
-    }
-
-    private void showSearchError() {
-        runOnUiThread(() -> {
-            hideMovies();
-            showStatusText(getResources().getString(R.string.search_error));
-        });
-    }
-
-    private void showSearchFailure(JSONObject searchJson) throws JSONException {
-        String errorText = searchJson.getString("Error");
-
-        runOnUiThread(() -> {
-            hideMovies();
-
-            String searchFailureText = getResources().getString(R.string.search_failure);
-            showStatusText(String.format("%s %s", searchFailureText, errorText));
-        });
-    }
-
-    private JSONObject requestJson(String urlStr) throws IOException, JSONException {
-        URL url = new URL(urlStr);
-
-        Scanner urlScanner = new Scanner(url.openStream());
-        String jsonStr = urlScanner.useDelimiter("\\A").next();
-
-        return new JSONObject(jsonStr);
-    }
 
     private MovieDetail createMovieDetail(JSONObject movieJson, String detail, String detailName) throws JSONException {
         return new MovieDetail(detailName, movieJson.getString(detail));
     }
 
-    private Movie createMovie(JSONObject searchMovieJson) throws IOException, JSONException {
-        // Request movie details
-        String imdbID = searchMovieJson.getString("imdbID");
-        String url = String.format("%s&i=%s", baseUrl, imdbID);
-        JSONObject movieJson = requestJson(url);
-
+    private Movie createMovie(JSONObject movieJson) throws JSONException {
         Movie movie = new Movie();
 
         movie.title = movieJson.getString("Title");
@@ -106,7 +61,7 @@ public class MovieSearchActivity extends Activity
         movie.posterUrl = movieJson.getString("Poster");
 
         JSONArray ratingsJson = movieJson.getJSONArray("Ratings");
-        ArrayList<String> ratings = new ArrayList<String>();
+        ArrayList<String> ratings = new ArrayList<>();
 
         for (int i = 0; i < ratingsJson.length(); i++) {
             JSONObject ratingJson = ratingsJson.getJSONObject(i);
@@ -150,57 +105,57 @@ public class MovieSearchActivity extends Activity
         return movie;
     }
 
-    private void searchMoviesAsync() {
-        try {
-            // Request JSON
-            String searchTerm = String.valueOf(searchFieldView.getText());
-            String url = String.format("%s&type=movie&s=%s", baseUrl, searchTerm);
-            JSONObject searchJson = requestJson(url);
+    private Movie[] createMovies(JSONObject[] movieJsons) throws IOException, JSONException {
+        Movie[] movies = new Movie[movieJsons.length];
 
-            // Check for failure
-            if (!searchJson.getBoolean("Response")) {
-                showSearchFailure(searchJson);
-                return;
-            }
-
-            // Create movies list
-            JSONArray searchMoviesJson = searchJson.getJSONArray("Search");
-
-            int movieCount = searchMoviesJson.length();
-            Movie[] movies = new Movie[movieCount];
-
-            for (int i = 0; i < movieCount; i++) {
-                JSONObject searchMovieJson = searchMoviesJson.getJSONObject(i);
-                movies[i] = createMovie(searchMovieJson);
-            }
-
-            ((MoviesApplication)getApplication()).movies = movies;
-
-            // Update view
-            runOnUiThread(() -> {
-                showMovies();
-                showStatusText(String.format(
-                        getResources().getString(R.string.search_results), movies.length
-                ));
-            });
-        } catch (JSONException | IOException e) {
-            showSearchError();
+        for (int i = 0; i < movies.length; i++) {
+            movies[i] = createMovie(movieJsons[i]);
         }
+
+        return movies;
+    }
+
+    private void showMovies(Movie[] movies) {
+        moviesView.setVisibility(View.VISIBLE);
+
+        MovieSearchAdapter moviesAdapter = new MovieSearchAdapter(movies);
+        moviesView.setAdapter(moviesAdapter);
+    }
+
+    private void hideMovies() {
+        moviesView.setVisibility(View.INVISIBLE);
+    }
+
+    private void showSearchSuccess(Movie[] movies) throws JSONException, IOException {
+        showMovies(movies);
+
+        String searchResultsText = getResources().getString(R.string.search_results);
+        showStatusText(String.format(searchResultsText, movies.length));
+    }
+
+    private void showSearchFailure() {
+        hideMovies();
+
+        String searchFailureText = getResources().getString(R.string.search_failure);
+        String errorText;
+
+        if (viewModel.errorText == null) {
+            errorText = getResources().getString(R.string.search_error);
+        }
+        else {
+            errorText = viewModel.errorText;
+        }
+
+        showStatusText(String.format("%s %s", searchFailureText, errorText));
     }
 
     public void searchMovies(View view) {
         showStatusText(getResources().getString(R.string.search_loading));
-
-        new Thread() {
-            public void run() {
-                searchMoviesAsync();
-            }
-        }.start();
+        viewModel.searchMovies(this, String.valueOf(searchFieldView.getText()));
     }
 
     public void showDetails(View view) {
         Intent intent = new Intent(this, MovieDetailsActivity.class);
-
         intent.putExtra("movieIndex", (int)view.getTag());
 
         startActivity(intent);
@@ -211,8 +166,7 @@ public class MovieSearchActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
 
-        viewModel = new ViewModelProvider(this)
-                .get(MovieSearchViewModel.class);
+        viewModel = new ViewModelProvider(this).get(MovieSearchViewModel.class);
 
         moviesView = findViewById(R.id.movieList);
         moviesView.setLayoutManager(new LinearLayoutManager(this));
@@ -222,8 +176,25 @@ public class MovieSearchActivity extends Activity
 
         hideStatusText();
 
-        if (viewModel.movies != null) {
-            showMovies();
-        }
+        final Observer<JSONObject[]> moviesObserver = new Observer<JSONObject[]>() {
+            @Override
+            public void onChanged(@Nullable final JSONObject[] movieJsons) {
+                if (movieJsons == null) {
+                    showSearchFailure();
+                } else {
+                    try {
+                        Movie[] movies = createMovies(movieJsons);
+                        showSearchSuccess(movies);
+
+                        // Set movies for use across activities
+                        ((MoviesApplication)getApplication()).movies = movies;
+                    } catch (JSONException | IOException e) {
+                        showSearchFailure();
+                    }
+                }
+            }
+        };
+
+        viewModel.movieJsons.observe(this, moviesObserver);
     }
 }

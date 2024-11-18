@@ -1,9 +1,6 @@
 package com.example.prog3210_a2.activities;
 
-import android.app.Activity;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -13,18 +10,25 @@ import com.example.prog3210_a2.adapters.MovieDetailsAdapter;
 import com.example.prog3210_a2.models.Movie;
 import com.example.prog3210_a2.MoviesApplication;
 import com.example.prog3210_a2.R;
-import com.example.prog3210_a2.models.MovieDetail;
+import com.example.prog3210_a2.viewmodels.MovieDetailsViewModel;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class MovieDetailsActivity extends Activity
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+public class MovieDetailsActivity extends AppCompatActivity
 {
+    private MovieDetailsViewModel viewModel;
+
     ImageView posterView;
 
     private void backToSearch() {
@@ -35,23 +39,6 @@ public class MovieDetailsActivity extends Activity
         textView.setText(text);
     }
 
-    private void loadPosterAsync(String urlStr) {
-        try {
-            URL url = new URL(urlStr);
-            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-
-            InputStream is = connection.getInputStream();
-            Bitmap image = BitmapFactory.decodeStream(is);
-
-            runOnUiThread(() -> {
-                posterView.setImageBitmap(image);
-            });
-        }
-        catch (IOException e) {
-            return;
-        }
-    }
-
     public void backToSearch(View view) {
         backToSearch();
     }
@@ -60,6 +47,8 @@ public class MovieDetailsActivity extends Activity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_details);
+
+        viewModel = new ViewModelProvider(this).get(MovieDetailsViewModel.class);
 
         // Get movie from application
         int movieIndex = getIntent().getIntExtra("movieIndex", -1);
@@ -79,10 +68,15 @@ public class MovieDetailsActivity extends Activity
         // Load poster
         posterView = findViewById(R.id.posterImage);
 
-        new Thread() {
-            public void run() {
-                loadPosterAsync(movie.posterUrl);
+        final Observer<Bitmap> posterObserver = new Observer<Bitmap>() {
+            @Override
+            public void onChanged(@Nullable final Bitmap image) {
+                posterView.setImageBitmap(image);
             }
-        }.start();
+        };
+
+        viewModel.poster.observe(this, posterObserver);
+
+        viewModel.loadPoster(this, movie.posterUrl);
     }
 }
