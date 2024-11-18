@@ -3,16 +3,15 @@ package com.example.prog3210_a2.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.prog3210_a2.MoviesApplication;
+import com.example.prog3210_a2.databinding.ActivitySearchBinding;
+import com.example.prog3210_a2.databinding.ActivitySearchBindingImpl;
 import com.example.prog3210_a2.models.Movie;
 import com.example.prog3210_a2.adapters.MovieSearchAdapter;
 import com.example.prog3210_a2.R;
@@ -29,19 +28,16 @@ import java.util.ArrayList;
 
 public class MovieSearchActivity extends AppCompatActivity
 {
+    private ActivitySearchBinding binding;
     private MovieSearchViewModel viewModel;
 
-    private RecyclerView moviesView;
-    private EditText searchFieldView;
-    private TextView statusTextView;
-
     private void showStatusText(String text) {
-        statusTextView.setVisibility(View.VISIBLE);
-        statusTextView.setText(text);
+        binding.statusText.setVisibility(View.VISIBLE);
+        binding.statusText.setText(text);
     }
 
     private void hideStatusText() {
-        statusTextView.setVisibility(View.INVISIBLE);
+        binding.statusText.setVisibility(View.INVISIBLE);
     }
 
 
@@ -116,14 +112,14 @@ public class MovieSearchActivity extends AppCompatActivity
     }
 
     private void showMovies(Movie[] movies) {
-        moviesView.setVisibility(View.VISIBLE);
+        binding.movieList.setVisibility(View.VISIBLE);
 
         MovieSearchAdapter moviesAdapter = new MovieSearchAdapter(movies);
-        moviesView.setAdapter(moviesAdapter);
+        binding.movieList.setAdapter(moviesAdapter);
     }
 
     private void hideMovies() {
-        moviesView.setVisibility(View.INVISIBLE);
+        binding.movieList.setVisibility(View.INVISIBLE);
     }
 
     private void showSearchSuccess(Movie[] movies) throws JSONException, IOException {
@@ -151,7 +147,7 @@ public class MovieSearchActivity extends AppCompatActivity
 
     public void searchMovies(View view) {
         showStatusText(getResources().getString(R.string.search_loading));
-        viewModel.searchMovies(this, String.valueOf(searchFieldView.getText()));
+        viewModel.searchMovies(this, String.valueOf(binding.searchField.getText()));
     }
 
     public void showDetails(View view) {
@@ -164,15 +160,14 @@ public class MovieSearchActivity extends AppCompatActivity
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_search);
+
+        binding = ActivitySearchBindingImpl.inflate(getLayoutInflater());
+        View view = binding.getRoot();
+        setContentView(view);
 
         viewModel = new ViewModelProvider(this).get(MovieSearchViewModel.class);
 
-        moviesView = findViewById(R.id.movieList);
-        moviesView.setLayoutManager(new LinearLayoutManager(this));
-
-        searchFieldView = findViewById(R.id.searchField);
-        statusTextView = findViewById(R.id.statusText);
+        binding.movieList.setLayoutManager(new LinearLayoutManager(this));
 
         hideStatusText();
 
